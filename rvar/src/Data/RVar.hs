@@ -27,11 +27,12 @@ module Data.RVar
         )
     
     , RVar
-    , runRVar, sampleRVar
+    , runRVar, sampleRVar, hoistRVar
     
     , RVarT
     , runRVarT, sampleRVarT
     , runRVarTWith, sampleRVarTWith
+    , hoistRVarT
     ) where
 
 
@@ -41,7 +42,7 @@ import Data.Random.Source ({-instances-})
 import qualified Control.Monad.Trans.Class as T
 import Control.Applicative
 import Control.Monad (liftM, ap)
-import Control.Monad.Prompt (MonadPrompt(..), PromptT, runPromptT)
+import Control.Monad.Prompt (MonadPrompt(..), PromptT, runPromptT, runPromptTM)
 import qualified Control.Monad.IO.Class as T
 import qualified Control.Monad.Trans as MTL
 import qualified Control.Monad.Identity as MTL
@@ -90,6 +91,11 @@ runRVar = runRVarTWith (return . T.runIdentity)
 -- |@sampleRVar x@ is equivalent to @runRVar x 'StdRandom'@.
 sampleRVar :: MonadRandom m => RVar a -> m a
 sampleRVar = sampleRVarTWith (return . T.runIdentity)
+
+-- | Generalize an 'RVar' to an 'RVarT' in any base monad.
+hoistRVar :: Monad m => RVar a -> RVarT m a
+hoistRVar = hoistRVarT (return . T.runIdentity)
+
 
 -- |A random variable with access to operations in an underlying monad.  Useful
 -- examples include any form of state for implementing random processes with hysteresis,
@@ -225,3 +231,18 @@ instance MTL.MonadIO m => MTL.MonadIO (RVarT m) where
     liftIO = MTL.lift . MTL.liftIO
 
 #endif
+
+-- | Apply a natural transformation to the base monad of an 'RVarT'.
+hoistRVarT
+  :: Monad n =>
+     (forall x. m x -> n x)
+  -> RVarT m a
+  -> RVarT n a
+hoistRVarT eta = RVarT . hoistPromptT eta . unRVarT
+
+hoistPromptT
+  :: Monad n =>
+     (forall x. m x -> n x)
+  -> PromptT p m a
+  -> PromptT p n a
+hoistPromptT eta = runPromptTM prompt (MTL.lift . eta)

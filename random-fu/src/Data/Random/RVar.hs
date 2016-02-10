@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes, FlexibleInstances, MultiParamTypeClasses #-}
 module Data.Random.RVar
-    ( RVar, runRVar
-    , RVarT, runRVarT, runRVarTWith
+    ( RVar, runRVar, hoistRVar
+    , RVarT, runRVarT, runRVarTWith, hoistRVarT
     ) where
 
 import Data.Random.Lift

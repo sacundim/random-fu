@@ -40,6 +40,7 @@ module Data.Random
       -- ** Abstract ('RVar')
       RVar, RVarT,
       runRVar, runRVarT, runRVarTWith,
+      hoistRVar, hoistRVarT,
 
       -- ** Concrete ('Distribution')
       Distribution(..), CDF(..), PDF(..),
